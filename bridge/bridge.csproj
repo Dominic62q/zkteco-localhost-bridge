@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- WinExe: no console window. The bridge is a background process;
+         health is checked via GET /api/health, not stdout. -->
+    <OutputType>WinExe</OutputType>
+    <!-- x86 to match vendor libzkfpcsharp.dll (managed wrapper is
+         processorArchitecture=x86; see C#/Demo2/Demo2.csproj HintPath
+         ..\lib\x86\libzkfpcsharp.dll). Native x86 driver loads from
+         SysWOW64\libzkfp.dll. Documented in README. -->
+    <PlatformTarget>x86</PlatformTarget>
+    <RuntimeIdentifier>win-x86</RuntimeIdentifier>
+    <SelfContained>false</SelfContained>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.*" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Vendor SDK wrapper. Never commit the DLL: ZK_SDK_PATH points at the
+         installed ZKFinger SDK (ZKFinger Standard SDK 5.3.0.33, C#/lib/x86).
+         At publish time the DLL is resolved from that path. -->
+    <Reference Include="libzkfpcsharp">
+      <HintPath>$(ZK_SDK_PATH)\C#\lib\x86\libzkfpcsharp.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>
