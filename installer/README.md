@@ -9,8 +9,8 @@ universal open access. File: `installer/output/FingerprintBridgeSetup-1.2.0.exe`
 1. Checks the ZKTeco driver is present (`libzkfp.dll`). Warns with guidance
    if missing — it does not bundle the vendor driver.
 2. Installs one self-contained `bridge.exe` (no .NET needed on the target)
-   to `C:\Program Files\FingerprintBridge\bin\`, plus Start-menu entries and
-   an optional start-with-Windows task.
+   to `C:\Program Files (x86)\FingerprintBridge\bin\`, plus Start-menu entries and
+   a start-with-Windows task (ticked by default).
 3. Creates the data folder and writes `bin\appsettings.json` with
    open universal access: any page origin (`"AllowedOrigins": ["*"]`),
    no tokens.
@@ -65,11 +65,9 @@ backend as `[{id, templateBase64}]`, then `identify` while they press —
 returns whoever matched (up to 500 candidates per call). This is the
 kiosk flow: press finger, system knows who.
 
-### 3. Flows
-**Enrol once per person:** `capture` ×3 (same finger, fresh presses — the
-sensor ignores an already-held finger) → `merge` → POST the merged
-template to **your** backend, stored against the person. The bridge
-retains nothing.
+**Enrol once per person:** `capture` ×3 (same finger — lift between touches)
+→ `merge` → POST the merged template to **your** backend, stored against
+the person. The bridge retains nothing.
 
 **Verify (e.g. clock-in):** fetch the person's stored template from
 **your** backend → `verify` while they press → `{ matched, score }` →
