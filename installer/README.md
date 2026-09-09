@@ -32,8 +32,9 @@ your app just calls the API. No domain registration, ever.
 
 Tokens remain available the day you want them: add one entry per app to
 `Bridge:ApiTokens` in `bin\appsettings.json`, hand each app its token
-out-of-band, and restart the bridge. From then on every `/api/*` call
-(except `/api/health`) needs its `X-Bridge-Token` (401 otherwise).
+out-of-band, and restart the bridge. Only then does every `/api/*` call
+(except `/api/health`) need its `X-Bridge-Token` (401 otherwise). With the
+default empty list, no token is needed for anything.
 
 ### 2. Minimal client (copy into your frontend)
 ```js
