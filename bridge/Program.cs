@@ -401,6 +401,54 @@ app.MapPost("/api/v1/identify", (V1IdentifyReq? req) =>
     }
 }).DisableRequestTimeout();
 
+// POST /api/v1/identify-template — match an already-captured template
+// {templateBase64} over caller-supplied candidates [{id, templateBase64}].
+// No finger press, no device use (duplicate checks at enrolment).
+// Returns {matched, matchId, score}.
+app.MapPost("/api/v1/identify-template", (V1IdentifyTemplateReq? req) =>
+{
+    if (string.IsNullOrWhiteSpace(req?.TemplateBase64))
+        return Results.Json(new { errorCode = "VALIDATION_ERROR", message = "A template to match is required." }, statusCode: 400);
+    byte[] template;
+    try
+    {
+        template = Convert.FromBase64String(req.TemplateBase64);
+    }
+    catch
+    {
+        return Results.Json(new { errorCode = "BAD_TEMPLATE", message = "Template is not valid base64." }, statusCode: 400);
+    }
+    if (template.Length == 0)
+        return Results.Json(new { errorCode = "BAD_TEMPLATE", message = "Template is empty." }, statusCode: 400);
+    if (req?.Candidates is not { Length: >= 1 })
+        return Results.Json(new { errorCode = "VALIDATION_ERROR", message = "At least one candidate template is required." }, statusCode: 400);
+    if (req.Candidates.Length > 500)
+        return Results.Json(new { errorCode = "VALIDATION_ERROR", message = "At most 500 candidates per call." }, statusCode: 400);
+    List<(string Id, byte[] Template)> cands = new();
+    foreach (var c in req.Candidates)
+    {
+        if (string.IsNullOrWhiteSpace(c?.Id) || string.IsNullOrWhiteSpace(c?.TemplateBase64))
+            return Results.Json(new { errorCode = "VALIDATION_ERROR", message = "Every candidate needs an id and a template." }, statusCode: 400);
+        try
+        {
+            cands.Add((c.Id, Convert.FromBase64String(c.TemplateBase64)));
+        }
+        catch
+        {
+            return Results.Json(new { errorCode = "BAD_TEMPLATE", message = $"Candidate '{c.Id}' is not valid base64." }, statusCode: 400);
+        }
+    }
+    try
+    {
+        var (matchId, score) = capture.IdentifyTemplate(template, cands);
+        return Results.Json(new { matched = matchId is not null, matchId, score });
+    }
+    catch (InvalidOperationException ex)
+    {
+        return Results.Json(new { errorCode = ex.Message, message = "Identification failed." }, statusCode: 500);
+    }
+}).DisableRequestTimeout();
+
 static object EnrolDto(EnrolSession s) => new
 {
     s.SessionId,
@@ -424,9 +472,10 @@ app.Lifetime.ApplicationStopping.Register(() =>
 app.Run();
 
 sealed record EnrolStartReq(string? FullName, string? ExternalId);
-sealed record V1Candidate(string? Id, string? TemplateBase64);
-sealed record V1IdentifyReq(V1Candidate[]? Candidates, int TimeoutSeconds = 30);
 sealed record VerifyStartReq(string? UserId);
+sealed record V1Candidate(string? Id, string? TemplateBase64);
 sealed record V1CaptureReq(int TimeoutSeconds = 30);
 sealed record V1MergeReq(string[]? Templates);
 sealed record V1VerifyReq(string? TemplateBase64, int TimeoutSeconds = 30);
+sealed record V1IdentifyReq(V1Candidate[]? Candidates, int TimeoutSeconds = 30);
+sealed record V1IdentifyTemplateReq(string? TemplateBase64, V1Candidate[]? Candidates);

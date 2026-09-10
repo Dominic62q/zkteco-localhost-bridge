@@ -1,7 +1,8 @@
 # Fingerprint Bridge — installer & web-developer guide
 
-(Bridge 1.2.0 — windowless background process, auto-starts after install,
-universal open access. File: `installer/output/FingerprintBridgeSetup-1.2.0.exe`)
+(Bridge 1.3.0 — adds press-free `identify-template` duplicate check,
+windowless background process, universal open access. File:
+`installer/output/FingerprintBridgeSetup-1.3.0.exe`)
 **Built from:** `installer/bridge-setup.iss` (Inno Setup 6 — recompile with
 `ISCC.exe installer\bridge-setup.iss` from the project root)
 
@@ -58,12 +59,16 @@ export const verify = (templateBase64, timeoutSeconds = 30) =>
   bridge("/api/v1/verify", { templateBase64, timeoutSeconds }); // → { matched, score }
 export const identify = (candidates, timeoutSeconds = 30) =>
   bridge("/api/v1/identify", { candidates, timeoutSeconds });   // → { matched, matchId, score }
+export const identifyTemplate = (templateBase64, candidates) =>
+  bridge("/api/v1/identify-template", { templateBase64, candidates }); // → { matched, matchId, score }, no press
 ```
 
-**Touch-and-go (no name picking):** pull all staff templates from your
-backend as `[{id, templateBase64}]`, then `identify` while they press —
-returns whoever matched (up to 500 candidates per call). This is the
-kiosk flow: press finger, system knows who.
+**Duplicate check (one finger, one name):** at enrolment, send one of the
+raw captures (not the merge) as `templateBase64` with all enrolled
+templates as candidates. `matched:true` means the finger is already taken
+(see `matchId`) — don't save. The matcher accepts live-format probes;
+a merged template as the probe scores nothing, so always check with a
+raw capture and store the merge.
 
 **Enrol once per person:** `capture` ×3 (same finger — lift between touches)
 → `merge` → POST the merged template to **your** backend, stored against

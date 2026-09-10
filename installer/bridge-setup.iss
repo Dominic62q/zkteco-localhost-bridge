@@ -4,7 +4,7 @@
 ; Build: ISCC.exe installer\bridge-setup.iss  (from the project root)
 #define MyAppName "Fingerprint Bridge"
 #define MyAppExeName "bridge.exe"
-#define MyAppVersion "1.2.0"
+#define MyAppVersion "1.3.0"
 [Setup]
 AppId={{B7E8F2A1-4C6D-4E9B-8F1A-2C3D4E5F6071}
 AppName={#MyAppName}

@@ -141,6 +141,7 @@ public sealed class CaptureService
             _gate.Release("v1-merge");
         }
     }
+
     /// <summary>
     /// 1:N identification: one live capture searched over caller-supplied
     /// candidates. Returns the matching candidate id and score, or no match.
@@ -149,6 +150,30 @@ public sealed class CaptureService
         IReadOnlyList<(string Id, byte[] Template)> candidates, int timeoutSeconds)
     {
         var (live, _) = Capture(timeoutSeconds);
+        try
+        {
+            return MatchTemplate(live, candidates);
+        }
+        finally
+        {
+            Array.Clear(live);
+        }
+    }
+
+    /// <summary>
+    /// Template-to-template 1:N search: compare an already-captured template
+    /// (e.g. a fresh merge for duplicate checks) against caller-supplied
+    /// candidates. No finger press, no device use.
+    /// </summary>
+    public (string? MatchId, int Score) IdentifyTemplate(
+        byte[] template, IReadOnlyList<(string Id, byte[] Template)> candidates)
+    {
+        return MatchTemplate(template, candidates);
+    }
+
+    private (string? MatchId, int Score) MatchTemplate(
+        byte[] live, IReadOnlyList<(string Id, byte[] Template)> candidates)
+    {
         IntPtr db = IntPtr.Zero;
         try
         {
@@ -171,7 +196,6 @@ public sealed class CaptureService
         }
         finally
         {
-            Array.Clear(live);
             if (db != IntPtr.Zero) _svc.DbFree(db);
         }
     }
